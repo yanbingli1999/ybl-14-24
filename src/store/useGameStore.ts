@@ -28,6 +28,7 @@ import {
 import { loadCandiesToTrain, clearTrain } from '@/engine/loadingSystem';
 import { calculateDispatchResult } from '@/engine/dispatchSystem';
 import { generateOrder } from '@/engine/contractSystem';
+import { applyGuildReputationChanges } from '@/engine/guildSystem';
 import {
   loadProfile,
   saveProfile,
@@ -268,7 +269,7 @@ const useGameStore = create<GameStore>((set, get) => {
 
       if (gamePhase !== 'playing' || !currentOrder) return;
 
-      const result = calculateDispatchResult(train, currentOrder);
+      const result = calculateDispatchResult(train, currentOrder, profile.guildReputations);
 
       let newCoins = profile.coins + result.reward - result.penalty;
       newCoins = Math.max(0, newCoins);
@@ -276,6 +277,7 @@ const useGameStore = create<GameStore>((set, get) => {
       newReputation = Math.max(0, newReputation);
 
       const newUnlocked = checkUnlockedStations(newReputation);
+      const newGuildReputations = applyGuildReputationChanges(profile.guildReputations, result.guildReputationChanges);
 
       const newProfile: PlayerProfile = {
         ...profile,
@@ -283,6 +285,7 @@ const useGameStore = create<GameStore>((set, get) => {
         reputation: newReputation,
         unlockedStations: newUnlocked,
         level: Math.floor(newReputation / 100) + 1,
+        guildReputations: newGuildReputations,
       };
 
       saveProfile(newProfile);
@@ -311,7 +314,7 @@ const useGameStore = create<GameStore>((set, get) => {
 
     nextOrder: () => {
       const { currentStationId, profile } = get();
-      const newOrder = generateOrder(currentStationId, profile.reputation);
+      const newOrder = generateOrder(currentStationId, profile.reputation, profile.guildReputations);
 
       set(state => ({
         train: clearTrain(state.train),
@@ -331,7 +334,7 @@ const useGameStore = create<GameStore>((set, get) => {
     resetGame: () => {
       const profile = loadProfile();
       const stationId = profile.unlockedStations[0] || 'candy-town';
-      const order = generateOrder(stationId, profile.reputation);
+      const order = generateOrder(stationId, profile.reputation, profile.guildReputations);
 
       set({
         board: createInitialBoard(),
@@ -372,7 +375,7 @@ const useGameStore = create<GameStore>((set, get) => {
 
       if (!station || station.reputationRequired > profile.reputation) return;
 
-      const newOrder = generateOrder(stationId, profile.reputation);
+      const newOrder = generateOrder(stationId, profile.reputation, profile.guildReputations);
 
       set(state => ({
         currentStationId: stationId,

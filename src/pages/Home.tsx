@@ -1,17 +1,20 @@
+import { useState } from 'react';
 import StatusBar from '@/components/StatusBar/StatusBar';
 import GameBoard from '@/components/Board/GameBoard';
 import TrainPanel from '@/components/Train/TrainPanel';
 import StationOrderPanel from '@/components/Station/StationOrderPanel';
+import GuildPanel from '@/components/GuildPanel/GuildPanel';
 import StatsPanel from '@/components/StatsPanel/StatsPanel';
 import DispatchResultModal from '@/components/DispatchResultModal/DispatchResultModal';
 import GameOverModal from '@/components/GameOverModal/GameOverModal';
 import { getStationProgress } from '@/engine/contractSystem';
 import useGameStore from '@/store/useGameStore';
-import { Train, Candy } from 'lucide-react';
+import { Train, Candy, Building2, MapPin } from 'lucide-react';
 
 export default function Home() {
   const { profile } = useGameStore();
   const { current, next, progress } = getStationProgress(profile.reputation);
+  const [rightPanelTab, setRightPanelTab] = useState<'order' | 'guild'>('order');
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-pink-50 to-purple-50">
@@ -67,13 +70,27 @@ export default function Home() {
               <TrainPanel />
             </div>
 
-            <div>
-              <div className="mb-3 flex items-center gap-2 text-gray-600">
-                <span className="text-xl">📍</span>
-                <span className="font-medium">当前订单</span>
-              </div>
-              <StationOrderPanel />
+            <div className="flex rounded-xl bg-white/60 p-1 mb-3">
+              <button
+                onClick={() => setRightPanelTab('order')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all
+                  ${rightPanelTab === 'order' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <MapPin className="w-4 h-4" />
+                订单
+              </button>
+              <button
+                onClick={() => setRightPanelTab('guild')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all
+                  ${rightPanelTab === 'guild' ? 'bg-white shadow text-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                <Building2 className="w-4 h-4" />
+                商会
+              </button>
             </div>
+
+            {rightPanelTab === 'order' && <StationOrderPanel />}
+            {rightPanelTab === 'guild' && <GuildPanel />}
           </div>
         </div>
 
@@ -86,6 +103,10 @@ export default function Home() {
             <li>• 匹配度高获得奖励，错装会被扣除罚金</li>
             <li>• 完成订单获得信誉，解锁更多车站</li>
             <li>• 4连消生成炸弹糖（范围消除），5连消生成彩虹糖（消除同色）</li>
+            <li>• <b className="text-indigo-600">商会系统：</b>每个车站属于一个商会，完成订单提升好感度</li>
+            <li>• <b className="text-indigo-600">竞争关系：</b>成功完成订单会降低竞争商会的好感度</li>
+            <li>• <b className="text-indigo-600">专属订单：</b>高好感度解锁专属订单，获得额外奖励</li>
+            <li>• <b className="text-indigo-600">奖惩系数：</b>高好感提升奖励、降低罚金，低好感会加倍罚金</li>
           </ul>
         </div>
 

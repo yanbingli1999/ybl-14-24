@@ -1,5 +1,6 @@
-import { StationOrder, OrderItem, Station, CandyType, BASIC_CANDY_TYPES } from '@/types';
-import { STATIONS, GAME_CONFIG } from '@/data/config';
+import { StationOrder, OrderItem, Station, CandyType, BASIC_CANDY_TYPES, GuildReputation } from '@/types';
+import { STATIONS, GAME_CONFIG, GUILD_REPUTATION_CONFIG } from '@/data/config';
+import { canGetExclusiveOrder, getGuildByStationId } from './guildSystem';
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -14,10 +15,15 @@ function shuffle<T>(array: T[]): T[] {
   return result;
 }
 
-export function generateOrder(stationId: string, reputation: number): StationOrder {
+export function generateOrder(stationId: string, reputation: number, guildReputations?: GuildReputation[]): StationOrder {
   const station = STATIONS.find(s => s.id === stationId);
   if (!station) {
     throw new Error(`Station not found: ${stationId}`);
+  }
+
+  const guild = getGuildByStationId(stationId);
+  if (!guild) {
+    throw new Error(`Guild not found for station: ${stationId}`);
   }
 
   const difficultyLevel = getDifficultyLevel(stationId, reputation);
@@ -36,15 +42,21 @@ export function generateOrder(stationId: string, reputation: number): StationOrd
   const isUrgent = Math.random() < getUrgentChance(difficultyLevel);
   const urgentBonus = isUrgent ? Math.floor(baseReward * GAME_CONFIG.URGENT_BONUS_RATE) : 0;
 
+  const isExclusive = guildReputations ? canGetExclusiveOrder(guildReputations, guild.id) : false;
+  const exclusiveBonus = isExclusive ? Math.floor(baseReward * (GUILD_REPUTATION_CONFIG.EXCLUSIVE_BONUS_MULTIPLIER - 1)) : 0;
+
   const order: StationOrder = {
     id: generateId(),
     stationId,
     stationName: station.name,
+    guildId: guild.id,
     items,
     reward: baseReward,
     penalty: Math.floor(baseReward * GAME_CONFIG.MISMATCH_PENALTY_RATE) * itemCount,
     isUrgent,
     urgentBonus,
+    isExclusive,
+    exclusiveBonus,
   };
 
   return order;

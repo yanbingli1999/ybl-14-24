@@ -15,6 +15,7 @@ import {
 import { STATIONS, INITIAL_TRAIN, GAME_CONFIG } from '@/data/config';
 import { createInitialBoard } from '@/engine/matchEngine';
 import { generateOrder } from '@/engine/contractSystem';
+import { initializeGuildReputations } from '@/engine/guildSystem';
 
 const STORAGE_KEYS = {
   PROFILE: 'candy-train-profile',
@@ -64,7 +65,7 @@ export function loadGameState(profile: PlayerProfile): PersistedGameState | null
   return {
     board: createInitialBoard(),
     train: JSON.parse(JSON.stringify(INITIAL_TRAIN)),
-    currentOrder: generateOrder(stationId, profile.reputation),
+    currentOrder: generateOrder(stationId, profile.reputation, profile.guildReputations),
     currentStationId: stationId,
     score: 0,
     moves: GAME_CONFIG.INITIAL_MOVES,
@@ -87,6 +88,7 @@ const DEFAULT_PROFILE: PlayerProfile = {
   reputation: 0,
   level: 1,
   unlockedStations: ['candy-town'],
+  guildReputations: initializeGuildReputations(),
 };
 
 const DEFAULT_STATS: AllStats = {
@@ -117,7 +119,11 @@ export function loadProfile(): PlayerProfile {
   try {
     const data = localStorage.getItem(STORAGE_KEYS.PROFILE);
     if (data) {
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      if (!parsed.guildReputations) {
+        parsed.guildReputations = initializeGuildReputations();
+      }
+      return parsed;
     }
   } catch (e) {
     console.error('Failed to load profile:', e);

@@ -1,10 +1,12 @@
-import { Train, StationOrder, DispatchResult, OrderItem, CandyType } from '@/types';
+import { Train, StationOrder, DispatchResult, OrderItem, CandyType, GuildReputation } from '@/types';
 import { GAME_CONFIG } from '@/data/config';
 import { getCandyLoad } from './loadingSystem';
+import { getRewardMultiplier, getPenaltyMultiplier, calculateGuildReputationChanges } from './guildSystem';
 
 export function calculateDispatchResult(
   train: Train,
-  order: StationOrder
+  order: StationOrder,
+  guildReputations: GuildReputation[]
 ): DispatchResult {
   const correctItems: OrderItem[] = [];
   const mismatches: OrderItem[] = [];
@@ -37,23 +39,31 @@ export function calculateDispatchResult(
   const matchRate = totalRequired > 0 ? matchPoints / totalRequired : 0;
   const success = matchRate >= 0.8;
 
+  const rewardMultiplier = getRewardMultiplier(guildReputations, order.guildId);
+  const penaltyMultiplier = getPenaltyMultiplier(guildReputations, order.guildId);
+
   let reward = 0;
   if (success) {
-    reward = order.reward;
+    reward = Math.floor(order.reward * rewardMultiplier);
     if (order.isUrgent) {
       reward += Math.floor(order.reward * GAME_CONFIG.URGENT_BONUS_RATE);
+    }
+    if (order.isExclusive) {
+      reward += order.exclusiveBonus;
     }
   }
 
   let penalty = 0;
   if (mismatches.length > 0) {
-    penalty = Math.floor(order.reward * GAME_CONFIG.MISMATCH_PENALTY_RATE) * mismatches.length;
-    penalty = Math.min(penalty, order.penalty);
+    penalty = Math.floor(order.reward * GAME_CONFIG.MISMATCH_PENALTY_RATE * penaltyMultiplier) * mismatches.length;
+    penalty = Math.min(penalty, Math.floor(order.penalty * penaltyMultiplier));
   }
 
   const reputationChange = success
     ? GAME_CONFIG.REPUTATION_PER_SUCCESS
     : GAME_CONFIG.REPUTATION_PER_FAIL;
+
+  const guildReputationChanges = calculateGuildReputationChanges(order, success, matchRate);
 
   return {
     success,
@@ -63,6 +73,7 @@ export function calculateDispatchResult(
     mismatches,
     correctItems,
     reputationChange,
+    guildReputationChanges,
   };
 }
 

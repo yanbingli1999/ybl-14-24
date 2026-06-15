@@ -55,16 +55,36 @@ export interface StationOrder {
   id: string;
   stationId: string;
   stationName: string;
+  guildId: string;
   items: OrderItem[];
   reward: number;
   penalty: number;
   isUrgent: boolean;
   urgentBonus: number;
+  isExclusive: boolean;
+  exclusiveBonus: number;
 }
+
+export interface Guild {
+  id: string;
+  name: string;
+  themeColor: string;
+  description: string;
+  rivalGuildIds: string[];
+}
+
+export interface GuildReputation {
+  guildId: string;
+  reputation: number;
+  level: GuildLevel;
+}
+
+export type GuildLevel = 'stranger' | 'acquaintance' | 'friend' | 'partner' | 'honored';
 
 export interface Station {
   id: string;
   name: string;
+  guildId: string;
   reputationRequired: number;
   themeColor: string;
   description: string;
@@ -77,6 +97,7 @@ export interface PlayerProfile {
   reputation: number;
   level: number;
   unlockedStations: string[];
+  guildReputations: GuildReputation[];
 }
 
 export interface GameState {
@@ -94,6 +115,13 @@ export interface GameState {
   dispatchResult: DispatchResult | null;
 }
 
+export interface GuildReputationChange {
+  guildId: string;
+  guildName: string;
+  change: number;
+  isRival: boolean;
+}
+
 export interface DispatchResult {
   success: boolean;
   matchRate: number;
@@ -102,6 +130,7 @@ export interface DispatchResult {
   mismatches: OrderItem[];
   correctItems: OrderItem[];
   reputationChange: number;
+  guildReputationChanges: GuildReputationChange[];
 }
 
 export interface StatsStep {

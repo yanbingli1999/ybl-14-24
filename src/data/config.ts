@@ -1,4 +1,4 @@
-import { CandyType, Station, Train, BOARD_SIZE } from '@/types';
+import { CandyType, Station, Train, BOARD_SIZE, Guild, GuildLevel } from '@/types';
 
 export const CANDY_CONFIG: Record<CandyType, { name: string; color: string; points: number; emoji: string }> = {
   strawberry: { name: '草莓糖', color: '#FF6B9D', points: 10, emoji: '🍓' },
@@ -10,10 +10,35 @@ export const CANDY_CONFIG: Record<CandyType, { name: string; color: string; poin
   bomb: { name: '炸弹糖', color: '#FF4757', points: 30, emoji: '💣' },
 };
 
+export const GUILDS: Guild[] = [
+  {
+    id: 'strawberry-sweet',
+    name: '草莓甜心商会',
+    themeColor: '#FF6B9D',
+    description: '甜美浪漫的糖果商会，主打草莓系列产品',
+    rivalGuildIds: ['lemon-sunshine'],
+  },
+  {
+    id: 'lemon-sunshine',
+    name: '柠檬阳光联盟',
+    themeColor: '#FFD93D',
+    description: '活力四射的联盟，以清爽柠檬和薄荷闻名',
+    rivalGuildIds: ['blueberry-grape'],
+  },
+  {
+    id: 'blueberry-grape',
+    name: '蓝莓葡萄商会',
+    themeColor: '#9B59B6',
+    description: '高贵典雅的高端商会，经营珍稀浆果',
+    rivalGuildIds: ['strawberry-sweet'],
+  },
+];
+
 export const STATIONS: Station[] = [
   {
     id: 'candy-town',
     name: '糖果小镇',
+    guildId: 'strawberry-sweet',
     reputationRequired: 0,
     themeColor: '#FF6B9D',
     description: '甜蜜的起点，适合新手列车长',
@@ -21,6 +46,7 @@ export const STATIONS: Station[] = [
   {
     id: 'lemon-estate',
     name: '柠檬庄园',
+    guildId: 'lemon-sunshine',
     reputationRequired: 100,
     themeColor: '#FFD93D',
     description: '酸爽的柠檬订单，需要更多技巧',
@@ -28,6 +54,7 @@ export const STATIONS: Station[] = [
   {
     id: 'mint-forest',
     name: '薄荷森林',
+    guildId: 'lemon-sunshine',
     reputationRequired: 300,
     themeColor: '#6BCB77',
     description: '急单频发的森林车站',
@@ -35,6 +62,7 @@ export const STATIONS: Station[] = [
   {
     id: 'blueberry-port',
     name: '蓝莓港口',
+    guildId: 'blueberry-grape',
     reputationRequired: 600,
     themeColor: '#4D96FF',
     description: '大额订单的港口贸易站',
@@ -42,11 +70,29 @@ export const STATIONS: Station[] = [
   {
     id: 'grape-castle',
     name: '葡萄城堡',
+    guildId: 'blueberry-grape',
     reputationRequired: 1000,
     themeColor: '#9B59B6',
     description: '皇家级别的复杂订单',
   },
 ];
+
+export const GUILD_LEVEL_CONFIG: Record<GuildLevel, { minReputation: number; name: string; rewardMultiplier: number; penaltyMultiplier: number; exclusiveChance: number }> = {
+  stranger: { minReputation: 0, name: '陌生人', rewardMultiplier: 1.0, penaltyMultiplier: 1.0, exclusiveChance: 0 },
+  acquaintance: { minReputation: 50, name: '熟人', rewardMultiplier: 1.1, penaltyMultiplier: 0.9, exclusiveChance: 0 },
+  friend: { minReputation: 150, name: '朋友', rewardMultiplier: 1.2, penaltyMultiplier: 0.75, exclusiveChance: 0.15 },
+  partner: { minReputation: 350, name: '伙伴', rewardMultiplier: 1.35, penaltyMultiplier: 0.5, exclusiveChance: 0.3 },
+  honored: { minReputation: 700, name: '贵宾', rewardMultiplier: 1.5, penaltyMultiplier: 0.25, exclusiveChance: 0.5 },
+};
+
+export const GUILD_REPUTATION_CONFIG = {
+  BASE_SUCCESS_GAIN: 15,
+  BASE_FAIL_LOSS: 10,
+  RIVAL_DECAY_RATE: 0.5,
+  EXCLUSIVE_BONUS_MULTIPLIER: 1.5,
+  LOW_REPUTATION_PENALTY_THRESHOLD: 30,
+  LOW_REPUTATION_PENALTY_MULTIPLIER: 2.0,
+};
 
 export const INITIAL_TRAIN: Train = {
   id: 'candy-express',

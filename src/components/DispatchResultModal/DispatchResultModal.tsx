@@ -1,13 +1,13 @@
 import useGameStore from '@/store/useGameStore';
 import { CANDY_CONFIG } from '@/data/config';
-import { Coins, Star, CheckCircle, XCircle, TrendingUp, TrendingDown } from 'lucide-react';
+import { Coins, Star, CheckCircle, XCircle, TrendingUp, TrendingDown, Building2 } from 'lucide-react';
 
 export default function DispatchResultModal() {
   const { gamePhase, dispatchResult, nextOrder, closeResult, currentOrder } = useGameStore();
 
   if (gamePhase !== 'result' || !dispatchResult || !currentOrder) return null;
 
-  const { success, matchRate, reward, penalty, mismatches, correctItems, reputationChange } =
+  const { success, matchRate, reward, penalty, mismatches, correctItems, reputationChange, guildReputationChanges } =
     dispatchResult;
 
   return (
@@ -64,6 +64,32 @@ export default function DispatchResultModal() {
               <span className="text-red-600 text-sm">
                 错装罚金: -{penalty} 金币
               </span>
+            </div>
+          )}
+
+          {guildReputationChanges.length > 0 && (
+            <div className="mb-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                <Building2 className="w-4 h-4 text-indigo-500" />
+                商会关系变动
+              </h4>
+              <div className="space-y-2">
+                {guildReputationChanges.map((change, i) => (
+                  <div
+                    key={i}
+                    className={`flex items-center justify-between p-2 rounded-lg text-sm
+                      ${change.isRival ? 'bg-orange-50' : 'bg-indigo-50'}`}
+                  >
+                    <span className={`font-medium ${change.isRival ? 'text-orange-700' : 'text-indigo-700'}`}>
+                      {change.guildName}
+                      {change.isRival && <span className="text-xs ml-1">(竞争)</span>}
+                    </span>
+                    <span className={`font-bold ${change.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {change.change >= 0 ? '+' : ''}{change.change}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
