@@ -1,5 +1,5 @@
-import { Guild, GuildReputation, GuildLevel, GuildReputationChange, StationOrder } from '@/types';
-import { GUILDS, GUILD_LEVEL_CONFIG, GUILD_REPUTATION_CONFIG, STATIONS } from '@/data/config';
+import { Guild, GuildReputation, GuildLevel, GuildReputationChange, StationOrder, DispatchResult } from '@/types';
+import { GUILDS, GUILD_LEVEL_CONFIG, GUILD_REPUTATION_CONFIG, STATIONS, GAME_CONFIG } from '@/data/config';
 
 export function getGuildById(guildId: string): Guild | undefined {
   return GUILDS.find(g => g.id === guildId);
@@ -145,4 +145,35 @@ export function getRivalGuilds(guildId: string): Guild[] {
 
 export function getGuildStations(guildId: string) {
   return STATIONS.filter(s => s.guildId === guildId);
+}
+
+export function getEffectivePenaltyMultiplier(guildReputations: GuildReputation[], guildId: string): number {
+  const rep = getGuildReputation(guildReputations, guildId);
+  let multiplier = GUILD_LEVEL_CONFIG[rep.level].penaltyMultiplier;
+  if (rep.reputation < GUILD_REPUTATION_CONFIG.LOW_REPUTATION_PENALTY_THRESHOLD) {
+    multiplier *= GUILD_REPUTATION_CONFIG.LOW_REPUTATION_PENALTY_MULTIPLIER;
+  }
+  return multiplier;
+}
+
+export function isLowReputation(guildReputations: GuildReputation[], guildId: string): boolean {
+  const rep = getGuildReputation(guildReputations, guildId);
+  return rep.reputation < GUILD_REPUTATION_CONFIG.LOW_REPUTATION_PENALTY_THRESHOLD;
+}
+
+export function calculatePreviewRewardPenalty(
+  order: StationOrder,
+  guildReputations: GuildReputation[]
+): { previewReward: number; previewPenalty: number; rewardMultiplier: number; penaltyMultiplier: number; lowRep: boolean } {
+  const rewardMultiplier = getRewardMultiplier(guildReputations, order.guildId);
+  const penaltyMultiplier = getEffectivePenaltyMultiplier(guildReputations, order.guildId);
+  const lowRep = isLowReputation(guildReputations, order.guildId);
+
+  const previewReward = Math.floor(order.reward * rewardMultiplier)
+    + (order.isUrgent ? Math.floor(order.reward * GAME_CONFIG.URGENT_BONUS_RATE) : 0)
+    + (order.isExclusive ? order.exclusiveBonus : 0);
+
+  const previewPenalty = Math.floor(order.penalty * penaltyMultiplier);
+
+  return { previewReward, previewPenalty, rewardMultiplier, penaltyMultiplier, lowRep };
 }

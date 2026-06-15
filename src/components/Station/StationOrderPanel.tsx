@@ -1,8 +1,8 @@
 import useGameStore from '@/store/useGameStore';
-import { CANDY_CONFIG, STATIONS, GUILDS, GUILD_LEVEL_CONFIG } from '@/data/config';
+import { CANDY_CONFIG, STATIONS, GUILDS } from '@/data/config';
 import { getCandyLoad } from '@/engine/loadingSystem';
-import { getGuildByStationId, getGuildReputation, getGuildLevelConfig } from '@/engine/guildSystem';
-import { MapPin, Flame, Coins, AlertTriangle, Crown, Building2 } from 'lucide-react';
+import { getGuildByStationId, getGuildReputation, getGuildLevelConfig, calculatePreviewRewardPenalty } from '@/engine/guildSystem';
+import { MapPin, Flame, Coins, AlertTriangle, Crown, Building2, TrendingUp, TrendingDown } from 'lucide-react';
 
 export default function StationOrderPanel() {
   const { currentOrder, train, currentStationId, profile, changeStation } = useGameStore();
@@ -13,6 +13,7 @@ export default function StationOrderPanel() {
   const guild = getGuildByStationId(currentStationId);
   const guildRep = guild ? getGuildReputation(profile.guildReputations, guild.id) : null;
   const guildLevelConfig = guildRep ? getGuildLevelConfig(guildRep.level) : null;
+  const preview = currentOrder ? calculatePreviewRewardPenalty(currentOrder, profile.guildReputations) : null;
   const availableStations = STATIONS.filter(
     s => s.reputationRequired <= profile.reputation
   );
@@ -71,8 +72,15 @@ export default function StationOrderPanel() {
             </span>
           </div>
           <div className="flex justify-between mt-1 text-xs text-gray-500">
-            <span>奖励 x{guildLevelConfig.rewardMultiplier.toFixed(1)}</span>
-            <span>罚金 x{guildLevelConfig.penaltyMultiplier.toFixed(2)}</span>
+            <span className="flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-green-500" />
+              奖励 x{guildLevelConfig.rewardMultiplier.toFixed(1)}
+            </span>
+            <span className={`flex items-center gap-1 ${preview?.lowRep ? 'text-red-600 font-semibold' : ''}`}>
+              <TrendingDown className="w-3 h-3" />
+              罚金 x{preview?.penaltyMultiplier.toFixed(2)}
+              {preview?.lowRep && <span className="text-red-500">(含低好感)</span>}
+            </span>
           </div>
         </div>
       )}
@@ -113,23 +121,41 @@ export default function StationOrderPanel() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-1 text-yellow-600">
-          <Coins className="w-4 h-4" />
-          <span className="font-bold">
-            +{currentOrder.reward}
-            {currentOrder.isUrgent && (
-              <span className="text-red-500 ml-1">(+{currentOrder.urgentBonus} 加急)</span>
-            )}
-            {currentOrder.isExclusive && (
-              <span className="text-orange-500 ml-1">(+{currentOrder.exclusiveBonus} 专属)</span>
-            )}
-          </span>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <div className="flex items-center gap-1 text-yellow-600">
+            <Coins className="w-4 h-4" />
+            <span className="font-bold">
+              +{preview?.previewReward ?? currentOrder.reward}
+            </span>
+          </div>
+          <div className={`flex items-center gap-1 ${preview?.lowRep ? 'text-red-600' : 'text-red-500'}`}>
+            <AlertTriangle className="w-4 h-4" />
+            <span className="font-bold">罚金 -{preview?.previewPenalty ?? currentOrder.penalty}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 text-red-500">
-          <AlertTriangle className="w-4 h-4" />
-          <span>罚金 -{currentOrder.penalty}</span>
-        </div>
+
+        {(preview && (preview.rewardMultiplier !== 1 || preview.penaltyMultiplier !== 1)) && (
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <span>
+              基础 {currentOrder.reward}
+              {preview.rewardMultiplier !== 1 && ` × ${preview.rewardMultiplier.toFixed(1)}`}
+              {currentOrder.isUrgent && ` (+${currentOrder.urgentBonus}加急)`}
+              {currentOrder.isExclusive && ` (+${currentOrder.exclusiveBonus}专属)`}
+            </span>
+            <span>
+              基础 {currentOrder.penalty}
+              {preview.penaltyMultiplier !== 1 && ` × ${preview.penaltyMultiplier.toFixed(2)}`}
+            </span>
+          </div>
+        )}
+
+        {preview?.lowRep && (
+          <div className="p-2 bg-red-50 rounded-lg flex items-center gap-1 text-xs text-red-600">
+            <AlertTriangle className="w-3 h-3" />
+            <span>商会好感度过低，罚金已翻倍！</span>
+          </div>
+        )}
       </div>
 
       {availableStations.length > 1 && (
